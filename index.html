@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Код Хэмминга (7,4)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Gruvbox Dark palette ─────────────────────────────── */
+    :root {
+      --bg:     #282828;
+      --bg1:    #3c3836;
+      --bg2:    #504945;
+      --bg3:    #665c54;
+      --bg4:    #7c6f64;
+      --fg:     #ebdbb2;
+      --fg1:    #d5c4a1;
+      --fg2:    #bdae93;
+      --fg4:    #a89984;
+      --red:    #fb4934;
+      --green:  #b8bb26;
+      --yellow: #fabd2f;
+      --blue:   #83a598;
+      --aqua:   #8ec07c;
+      --orange: #fe8019;
+      --purple: #d3869b;
+    }
+
+    /* ── Reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 36px 16px 96px;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; }
+
+    /* ── Header ───────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--bg3);
+    }
+    .header-tag {
+      font-size: 0.65rem;
+      letter-spacing: 4px;
+      color: var(--fg4);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: var(--yellow);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .header .subtitle {
+      font-size: 0.78rem;
+      color: var(--fg4);
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Progress bar ─────────────────────────────────────── */
+    .progress {
+      display: flex;
+      margin-bottom: 40px;
+      border: 1px solid var(--bg3);
+      overflow: hidden;
+    }
+    .progress-step {
+      flex: 1;
+      padding: 10px 4px 8px;
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--fg4);
+      border-right: 1px solid var(--bg3);
+      transition: background 0.3s, color 0.3s;
+      background: var(--bg1);
+      line-height: 1.4;
+      cursor: default;
+      user-select: none;
+    }
+    .progress-step:last-child { border-right: none; }
+    .progress-step .ps-num {
+      display: block;
+      font-size: 0.6rem;
+      opacity: 0.55;
+      margin-bottom: 2px;
+    }
+    .progress-step.active {
+      background: var(--bg3);
+      color: var(--yellow);
+    }
+    .progress-step.done {
+      background: var(--bg2);
+      color: var(--aqua);
+    }
+
+    /* ── Block card ───────────────────────────────────────── */
+    .block {
+      border: 1px solid var(--bg3);
+      background: var(--bg1);
+      padding: 28px 28px 24px;
+      margin-bottom: 20px;
+      display: none;
+      animation: fadeUp 0.35s ease;
+    }
+    .block.visible { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .block-label {
+      font-size: 0.62rem;
+      letter-spacing: 4px;
+      color: var(--fg4);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .block-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 20px;
+    }
+
+    /* ── Notes / alerts ───────────────────────────────────── */
+    .note {
+      background: var(--bg);
+      border-left: 3px solid var(--blue);
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: var(--fg2);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .note.warn    { border-left-color: var(--orange); }
+    .note.success { border-left-color: var(--green); }
+    .note.danger  { border-left-color: var(--red); }
+
+    /* ── Bit inputs (step 1) ──────────────────────────────── */
+    .bit-inputs {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 26px;
+    }
+    .bit-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .bit-wrap .lbl {
+      font-size: 0.68rem;
+      color: var(--blue);
+    }
+    .bit-wrap .pos-lbl {
+      font-size: 0.62rem;
+      color: var(--fg4);
+    }
+    input.bit-inp {
+      width: 58px;
+      height: 62px;
+      background: var(--bg2);
+      border: 2px solid var(--bg3);
+      color: var(--fg);
+      font-family: inherit;
+      font-size: 1.9rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      caret-color: var(--yellow);
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input.bit-inp:focus  { border-color: var(--yellow); }
+    input.bit-inp.filled { border-color: var(--blue); }
+
+    /* ── Hamming table ────────────────────────────────────── */
+    .htable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+    }
+    .htable td {
+      border: 1px solid var(--bg3);
+      text-align: center;
+      padding: 9px 4px;
+    }
+    .htable .rl {
+      color: var(--fg4);
+      font-size: 0.68rem;
+      text-align: left;
+      padding-left: 10px;
+      white-space: nowrap;
+      background: var(--bg);
+    }
+    .tk  { background: var(--bg2); color: var(--blue); font-weight: 600; }
+    .ti  { background: var(--bg);  color: var(--fg); }
+    .thi { background: var(--bg3) !important; color: var(--yellow) !important; border-color: var(--yellow) !important; }
+    .terr { background: rgba(251,73,52,.18) !important; color: var(--red) !important; border-color: var(--red) !important; }
+    .tfix { background: rgba(184,187,38,.14) !important; color: var(--green) !important; border-color: var(--green) !important; }
+
+    /* ── Calc formulas ────────────────────────────────────── */
+    .calc-section { margin-top: 4px; }
+    .calc-heading {
+      font-size: 0.68rem;
+      color: var(--fg4);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .calc-item { margin-bottom: 14px; }
+    .calc-item .ci-label {
+      font-size: 0.72rem;
+      color: var(--fg4);
+      margin-bottom: 4px;
+    }
+    .calc-formula {
+      background: var(--bg);
+      border: 1px solid var(--bg2);
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      color: var(--fg1);
+      line-height: 1.5;
+    }
+    .calc-formula .ck { color: var(--blue); }
+    .calc-formula .cv { color: var(--yellow); font-weight: 600; }
+    .calc-formula .cr { color: var(--aqua); font-weight: 700; }
+
+    /* ── Interactive bits (step 3) ────────────────────────── */
+    .ibit-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 16px 0 10px;
+    }
+    .ibit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .ibit .il  { font-size: 0.64rem; color: var(--fg4); }
+    .ibit .ip  { font-size: 0.6rem;  color: var(--bg4); }
+    .ibit-cell {
+      width: 50px;
+      height: 54px;
+      border: 2px solid var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .15s, transform .12s, background .15s;
+      user-select: none;
+    }
+    .ibit-cell:hover { border-color: var(--orange); transform: scale(1.06); }
+    .ibit-cell.ik { background: var(--bg2); color: var(--blue); }
+    .ibit-cell.ii { background: var(--bg);  color: var(--fg); }
+    .ibit-cell.flipped {
+      background: rgba(251,73,52,.18) !important;
+      color: var(--red) !important;
+      border-color: var(--red) !important;
+      transform: none;
+    }
+    .error-note {
+      text-align: center;
+      font-size: 0.78rem;
+      min-height: 20px;
+      margin-bottom: 6px;
+      transition: color .2s;
+    }
+
+    /* ── Syndrome cards ───────────────────────────────────── */
+    .syndrome-row {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 16px;
+      flex-wrap: wrap;
+    }
+    .s-card {
+      flex: 1;
+      min-width: 160px;
+      background: var(--bg);
+      border: 1px solid var(--bg3);
+      padding: 12px;
+    }
+    .s-card .sc-label  { font-size: 0.72rem; color: var(--blue);  margin-bottom: 4px; }
+    .s-card .sc-covers { font-size: 0.65rem; color: var(--fg4);   margin-bottom: 6px; }
+    .s-card .sc-form   { font-size: 0.78rem; color: var(--fg2);   margin-bottom: 6px; line-height: 1.5; }
+    .s-card .sc-val    { font-size: 1.15rem; font-weight: 700; color: var(--yellow); }
+
+    /* ── Bit display row ──────────────────────────────────── */
+    .dbit-row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    .dbit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .dbit .dl  { font-size: 0.6rem;  color: var(--fg4); }
+    .dbit .dp  { font-size: 0.58rem; color: var(--bg4); }
+    .dbit-cell {
+      width: 42px;
+      height: 46px;
+      border: 2px solid var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    /* ── Result table ─────────────────────────────────────── */
+    .res-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+      font-size: 0.83rem;
+    }
+    .res-table td {
+      border: 1px solid var(--bg2);
+      padding: 10px 14px;
+      vertical-align: middle;
+    }
+    .res-table .rk { color: var(--fg4); width: 190px; font-size: 0.75rem; }
+    .res-table .rv { letter-spacing: 5px; }
+
+    /* ── Verdict ──────────────────────────────────────────── */
+    .verdict {
+      padding: 14px 18px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 2px solid;
+      margin-top: 16px;
+      letter-spacing: 1px;
+    }
+    .verdict.ok      { color: var(--green);  border-color: var(--green);  background: rgba(184,187,38,.07); }
+    .verdict.corrected { color: var(--aqua); border-color: var(--aqua);   background: rgba(142,192,124,.07); }
+    .verdict.fail    { color: var(--red);    border-color: var(--red);    background: rgba(251,73,52,.07); }
+
+    /* ── Legend ───────────────────────────────────────────── */
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 0.72rem;
+      color: var(--fg2);
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .leg-item { display: flex; align-items: center; gap: 6px; }
+    .leg-dot  { width: 11px; height: 11px; border: 1px solid; flex-shrink: 0; }
+    .leg-dot.k   { background: var(--bg2); border-color: var(--blue); }
+    .leg-dot.i   { background: var(--bg);  border-color: var(--bg3); }
+    .leg-dot.err { background: rgba(251,73,52,.18); border-color: var(--red); }
+    .leg-dot.fix { background: rgba(184,187,38,.14); border-color: var(--green); }
+
+    /* ── Badges ───────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid;
+    }
+    .badge.red   { color: var(--red);   border-color: var(--red);   background: rgba(251,73,52,.1); }
+    .badge.green { color: var(--green); border-color: var(--green); background: rgba(184,187,38,.1); }
+    .badge.blue  { color: var(--blue);  border-color: var(--blue);  background: rgba(131,165,152,.1); }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .btn {
+      padding: 10px 22px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      border: 2px solid;
+      text-transform: uppercase;
+      transition: background .15s, color .15s, border-color .15s;
+      line-height: 1;
+    }
+    .btn-primary {
+      background: var(--yellow);
+      color: var(--bg);
+      border-color: var(--yellow);
+    }
+    .btn-primary:hover  { background: var(--orange); border-color: var(--orange); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--fg2);
+      border-color: var(--bg3);
+    }
+    .btn-secondary:hover { border-color: var(--fg4); color: var(--fg); }
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: var(--red);
+    }
+    .btn-danger:hover { background: rgba(251,73,52,.1); }
+    .btn-restart {
+      background: transparent;
+      color: var(--aqua);
+      border-color: var(--aqua);
+    }
+    .btn-restart:hover { background: rgba(142,192,124,.1); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+      align-items: center;
+    }
+
+    .divider { border: none; border-top: 1px solid var(--bg2); margin: 20px 0; }
+    .sect-label {
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: var(--fg4);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-tag">Помехоустойчивое кодирование</div>
+    <h1>Код Хэмминга</h1>
+    <div class="subtitle">(7, 4) &nbsp;·&nbsp; обнаружение и исправление однобитовых ошибок</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress" id="progress">
+    <div class="progress-step active" id="ps1"><span class="ps-num">01</span>Ввод</div>
+    <div class="progress-step"        id="ps2"><span class="ps-num">02</span>Кодирование</div>
+    <div class="progress-step"        id="ps3"><span class="ps-num">03</span>Канал</div>
+    <div class="progress-step"        id="ps4"><span class="ps-num">04</span>Декодирование</div>
+    <div class="progress-step"        id="ps5"><span class="ps-num">05</span>Результат</div>
+  </div>
+
+  <!-- ──────────────── BLOCK 1: Input ──────────────────── -->
+  <div class="block visible" id="block1">
+    <div class="block-label">Шаг 01</div>
+    <div class="block-title">Отправьте сообщение</div>
+    <div class="note">
+      Введите 4-битное сообщение для передачи. Каждое поле принимает только <strong>0</strong> или <strong>1</strong>.
+      Переход между полями — автоматически.
+    </div>
+
+    <div class="bit-inputs">
+      <div class="bit-wrap">
+        <span class="lbl">И₁</span>
+        <input class="bit-inp" id="b0" maxlength="1" inputmode="numeric" autocomplete="off">
+        <span class="pos-lbl">бит 1</span>
+      </div>
+      <div class="bit-wrap">
+        <span class="lbl">И₂</span>
+        <input class="bit-inp" id="b1" maxlength="1" inputmode="numeric" autocomplete="off">
+        <span class="pos-lbl">бит 2</span>
+      </div>
+      <div class="bit-wrap">
+        <span class="lbl">И₃</span>
+        <input class="bit-inp" id="b2" maxlength="1" inputmode="numeric" autocomplete="off">
+        <span class="pos-lbl">бит 3</span>
+      </div>
+      <div class="bit-wrap">
+        <span class="lbl">И₄</span>
+        <input class="bit-inp" id="b3" maxlength="1" inputmode="numeric" autocomplete="off">
+        <span class="pos-lbl">бит 4</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goStep2()">Дальше →</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── BLOCK 2: Encoding ───────────────── -->
+  <div class="block" id="block2">
+    <div class="block-label">Шаг 02</div>
+    <div class="block-title">Кодирование</div>
+    <div class="note">
+      Контрольные биты <strong style="color:var(--blue)">К</strong> размещаются на позициях, являющихся степенями двойки:
+      <strong>1, 2, 4</strong>. Информационные биты <strong style="color:var(--fg)">И</strong> занимают позиции:
+      <strong>3, 5, 6, 7</strong>.
+    </div>
+
+    <!-- Encoding table -->
+    <table class="htable" id="encTable">
+      <tbody>
+        <tr>
+          <td class="rl">Позиция</td>
+          <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td>
+        </tr>
+        <tr>
+          <td class="rl">Тип бита</td>
+          <td class="tk">К₁</td><td class="tk">К₂</td><td class="ti">И₁</td>
+          <td class="tk">К₃</td><td class="ti">И₂</td><td class="ti">И₃</td><td class="ti">И₄</td>
+        </tr>
+        <tr>
+          <td class="rl">Значение</td>
+          <td class="tk" id="ev0">?</td><td class="tk" id="ev1">?</td><td class="ti" id="ev2">?</td>
+          <td class="tk" id="ev3">?</td><td class="ti" id="ev4">?</td><td class="ti" id="ev5">?</td><td class="ti" id="ev6">?</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Calculation area (revealed on button click) -->
+    <div id="calcArea" style="display:none;">
+      <hr class="divider">
+      <div id="calcContent"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnK" onclick="findControlBits()">Найти контрольные биты</button>
+      <button class="btn btn-secondary" onclick="goBack(2)">← Назад</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── BLOCK 3: Error injection ─────────── -->
+  <div class="block" id="block3">
+    <div class="block-label">Шаг 03</div>
+    <div class="block-title">Канал связи</div>
+    <div class="note warn">
+      Сообщение передаётся по зашумлённому каналу. <strong>Нажмите на любой бит</strong>, чтобы
+      инвертировать его (имитация помехи). Повторное нажатие отменяет ошибку.
+      Можно отправить без ошибки.
+    </div>
+
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot k"></div><span>Контрольный</span></div>
+      <div class="leg-item"><div class="leg-dot i"></div><span>Информационный</span></div>
+      <div class="leg-item"><div class="leg-dot err"></div><span>Внесена ошибка</span></div>
+    </div>
+
+    <div class="ibit-row" id="ibitRow"></div>
+    <div class="error-note" id="errNote" style="color:var(--fg4);">Ошибок не внесено</div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="goStep4()">Отправить →</button>
+      <button class="btn btn-danger"    onclick="randomError()">⚡ Случайная ошибка</button>
+      <button class="btn btn-secondary" onclick="goBack(3)">← Назад</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── BLOCK 4: Decoding ───────────────── -->
+  <div class="block" id="block4">
+    <div class="block-label">Шаг 04</div>
+    <div class="block-title">Декодирование</div>
+    <div id="decContent"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary"   onclick="goStep5()">К результатам →</button>
+      <button class="btn btn-secondary" onclick="goBack(4)">← Назад</button>
+    </div>
+  </div>
+
+  <!-- ──────────────── BLOCK 5: Result ─────────────────── -->
+  <div class="block" id="block5">
+    <div class="block-label">Шаг 05</div>
+    <div class="block-title">Результат</div>
+    <div id="resContent"></div>
+    <div class="btn-row">
+      <button class="btn btn-restart" onclick="restart()">↺ Начать заново</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ================================================================
+   STATE
+   ================================================================ */
+let dataBits = [];  // [I1, I2, I3, I4]  — исходные 4 бита
+let codeword = [];  // [K1, K2, I1, K3, I2, I3, I4]  — 7-битное кодовое слово
+let received = [];  // кодовое слово, возможно с ошибкой
+let injectedPos = -1;  // 1-индексированная позиция ошибки (−1 = нет)
+
+/* Метаданные позиций (0-индексированный массив) */
+const LABELS = ['К₁','К₂','И₁','К₃','И₂','И₃','И₄'];
+const IS_K   = [true, true, false, true, false, false, false];
+
+/* ================================================================
+   UTIL
+   ================================================================ */
+function setProgress(step) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('ps' + i);
+    el.className = 'progress-step' +
+      (i < step ? ' done' : i === step ? ' active' : '');
+  }
+}
+
+function showBlock(n) {
+  const el = document.getElementById('block' + n);
+  el.classList.add('visible');
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+
+function hideBlock(n) {
+  document.getElementById('block' + n).classList.remove('visible');
+}
+
+/* Маленький рендер строки бит с подсветкой */
+function renderBitRow(bits, highlight) {
+  // highlight: map idx → 'err'|'fix'|'k'|'i'|''
+  return bits.map((b, i) => {
+    const h = highlight[i] || '';
+    let bg  = IS_K[i] ? 'var(--bg2)' : 'var(--bg)';
+    let col = IS_K[i] ? 'var(--blue)' : 'var(--fg)';
+    let bor = 'var(--bg3)';
+    if (h === 'err') { bg = 'rgba(251,73,52,.18)'; col = 'var(--red)';   bor = 'var(--red)';   }
+    if (h === 'fix') { bg = 'rgba(184,187,38,.14)'; col = 'var(--green)'; bor = 'var(--green)'; }
+    return `
+      <div class="dbit">
+        <span class="dl">${LABELS[i]}</span>
+        <div class="dbit-cell" style="background:${bg};color:${col};border-color:${bor};">${b}</div>
+        <span class="dp">п.${i+1}</span>
+      </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   INPUT (step 1)
+   ================================================================ */
+document.querySelectorAll('input.bit-inp').forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    const v = inp.value.replace(/[^01]/g, '');
+    inp.value = v ? v[0] : '';
+    inp.classList.toggle('filled', !!v);
+    if (v) {
+      const nxt = document.getElementById('b' + (i + 1));
+      if (nxt) nxt.focus();
+    }
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value) {
+      const prv = document.getElementById('b' + (i - 1));
+      if (prv) { prv.focus(); prv.select(); }
+    }
+  });
+});
+
+/* ================================================================
+   STEP 2 — Encoding
+   ================================================================ */
+function goStep2() {
+  const vals = [0,1,2,3].map(i => document.getElementById('b' + i).value);
+  if (vals.some(v => v !== '0' && v !== '1')) {
+    alert('Введите все 4 бита (только 0 или 1).');
+    return;
+  }
+  dataBits = vals.map(Number);
+
+  // Разместить информационные биты; контрольные = 0 пока
+  // Позиции (0-indexed): 0=K1 1=K2 2=I1 3=K3 4=I2 5=I3 6=I4
+  codeword = [0, 0, dataBits[0], 0, dataBits[1], dataBits[2], dataBits[3]];
+
+  // Заполнить таблицу
+  ['ev0','ev1','ev2','ev3','ev4','ev5','ev6'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.textContent = IS_K[i] ? '?' : codeword[i];
+    el.className   = IS_K[i] ? 'tk' : 'ti';
+  });
+
+  // Сбросить calc-область
+  document.getElementById('calcArea').style.display = 'none';
+  document.getElementById('calcContent').innerHTML  = '';
+  const btn = document.getElementById('btnK');
+  btn.textContent = 'Найти контрольные биты';
+  btn.onclick     = findControlBits;
+  btn.disabled    = false;
+
+  setProgress(2);
+  showBlock(2);
+}
+
+function findControlBits() {
+  const d = dataBits;
+  // K1 = I1 ⊕ I2 ⊕ I4  (позиции 1,3,5,7)
+  const k1 = d[0] ^ d[1] ^ d[3];
+  // K2 = I1 ⊕ I3 ⊕ I4  (позиции 2,3,6,7)
+  const k2 = d[0] ^ d[2] ^ d[3];
+  // K3 = I2 ⊕ I3 ⊕ I4  (позиции 4,5,6,7)
+  const k3 = d[1] ^ d[2] ^ d[3];
+
+  codeword[0] = k1; codeword[1] = k2; codeword[3] = k3;
+
+  // Обновить таблицу
+  document.getElementById('ev0').textContent = k1;
+  document.getElementById('ev1').textContent = k2;
+  document.getElementById('ev3').textContent = k3;
+
+  // Построить calc-контент
+  document.getElementById('calcArea').style.display = 'block';
+  document.getElementById('calcContent').innerHTML = `
+    <div class="sect-label">Вычисление контрольных битов методом XOR (⊕)</div>
+
+    <div class="calc-section">
+      <div class="calc-item">
+        <div class="ci-label">К₁ — проверяет позиции 1, 3, 5, 7 &nbsp;→&nbsp; биты И₁, И₂, И₄</div>
+        <div class="calc-formula">
+          <span class="ck">К₁</span> = И₁ ⊕ И₂ ⊕ И₄
+          &nbsp;=&nbsp; <span class="cv">${d[0]}</span> ⊕ <span class="cv">${d[1]}</span> ⊕ <span class="cv">${d[3]}</span>
+          &nbsp;=&nbsp; <span class="cr">${k1}</span>
+        </div>
+      </div>
+      <div class="calc-item">
+        <div class="ci-label">К₂ — проверяет позиции 2, 3, 6, 7 &nbsp;→&nbsp; биты И₁, И₃, И₄</div>
+        <div class="calc-formula">
+          <span class="ck">К₂</span> = И₁ ⊕ И₃ ⊕ И₄
+          &nbsp;=&nbsp; <span class="cv">${d[0]}</span> ⊕ <span class="cv">${d[2]}</span> ⊕ <span class="cv">${d[3]}</span>
+          &nbsp;=&nbsp; <span class="cr">${k2}</span>
+        </div>
+      </div>
+      <div class="calc-item">
+        <div class="ci-label">К₃ — проверяет позиции 4, 5, 6, 7 &nbsp;→&nbsp; биты И₂, И₃, И₄</div>
+        <div class="calc-formula">
+          <span class="ck">К₃</span> = И₂ ⊕ И₃ ⊕ И₄
+          &nbsp;=&nbsp; <span class="cv">${d[1]}</span> ⊕ <span class="cv">${d[2]}</span> ⊕ <span class="cv">${d[3]}</span>
+          &nbsp;=&nbsp; <span class="cr">${k3}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note success">
+      Готовое кодовое слово:
+      <strong style="letter-spacing:6px;color:var(--yellow);">${codeword.join(' ')}</strong>
+      &nbsp;&mdash;&nbsp; 4 информационных + 3 контрольных бита
+    </div>
+  `;
+
+  // Превратить кнопку в «Дальше»
+  const btn = document.getElementById('btnK');
+  btn.textContent = 'Дальше →';
+  btn.onclick     = goStep3;
+}
+
+/* ================================================================
+   STEP 3 — Error injection
+   ================================================================ */
+function goStep3() {
+  received     = [...codeword];
+  injectedPos  = -1;
+
+  // Построить интерактивные биты
+  const row = document.getElementById('ibitRow');
+  row.innerHTML = codeword.map((b, i) => `
+    <div class="ibit">
+      <span class="il">${LABELS[i]}</span>
+      <div class="ibit-cell ${IS_K[i] ? 'ik' : 'ii'}" id="ib${i}" onclick="flipBit(${i})">${b}</div>
+      <span class="ip">поз.${i+1}</span>
+    </div>
+  `).join('');
+
+  refreshErrNote();
+  setProgress(3);
+  showBlock(3);
+}
+
+function flipBit(idx) {
+  // Если уже есть другая ошибка — снимаем её
+  if (injectedPos !== -1 && injectedPos !== idx + 1) {
+    const prev = injectedPos - 1;
+    received[prev] = codeword[prev];
+    const cell = document.getElementById('ib' + prev);
+    cell.textContent = codeword[prev];
+    cell.classList.remove('flipped');
+    injectedPos = -1;
+  }
+
+  const cell = document.getElementById('ib' + idx);
+  if (received[idx] !== codeword[idx]) {
+    // Уже перевёрнут — возвращаем
+    received[idx] = codeword[idx];
+    cell.textContent = codeword[idx];
+    cell.classList.remove('flipped');
+    injectedPos = -1;
+  } else {
+    // Переворачиваем
+    received[idx] ^= 1;
+    cell.textContent = received[idx];
+    cell.classList.add('flipped');
+    injectedPos = idx + 1;
+  }
+  refreshErrNote();
+}
+
+function refreshErrNote() {
+  const el = document.getElementById('errNote');
+  if (injectedPos === -1) {
+    el.style.color   = 'var(--fg4)';
+    el.textContent   = 'Ошибок не внесено';
+  } else {
+    el.style.color   = 'var(--red)';
+    el.textContent   = `Ошибка внесена в позицию ${injectedPos} (${LABELS[injectedPos-1]})`;
+  }
+}
+
+function randomError() {
+  const pos = Math.floor(Math.random() * 7);
+  // Сбрасываем текущую ошибку если есть
+  if (injectedPos !== -1) flipBit(injectedPos - 1);
+  flipBit(pos);
+}
+
+/* ================================================================
+   STEP 4 — Decoding
+   ================================================================ */
+function goStep4() {
+  const r = received;
+
+  // Синдром
+  const s1 = r[0] ^ r[2] ^ r[4] ^ r[6];  // позиции 1,3,5,7
+  const s2 = r[1] ^ r[2] ^ r[5] ^ r[6];  // позиции 2,3,6,7
+  const s3 = r[3] ^ r[4] ^ r[5] ^ r[6];  // позиции 4,5,6,7
+  const errPos = s3 * 4 + s2 * 2 + s1;   // 1-индексированная позиция
+
+  // Исправление
+  const corrected = [...r];
+  if (errPos > 0 && errPos <= 7) corrected[errPos - 1] ^= 1;
+
+  // Извлечь информационные биты (позиции 3,5,6,7 → индексы 2,4,5,6)
+  const recovered = [corrected[2], corrected[4], corrected[5], corrected[6]];
+
+  // Подсветка для принятого слова
+  const rxHi = {};
+  if (injectedPos !== -1) rxHi[injectedPos - 1] = 'err';
+
+  // Подсветка для исправленного слова
+  const fixHi = {};
+  if (errPos > 0 && errPos <= 7) fixHi[errPos - 1] = 'fix';
+
+  // Строим HTML
+  let html = '';
+
+  // — Принятое сообщение —
+  html += `
+    <div class="sect-label">Принятое сообщение</div>
+    <div class="dbit-row">${renderBitRow(r, rxHi)}</div>
+    <hr class="divider">
+    <div class="sect-label">Вычисление синдрома</div>
+
+    <div class="syndrome-row">
+      <div class="s-card">
+        <div class="sc-label">S₁</div>
+        <div class="sc-covers">позиции 1, 3, 5, 7</div>
+        <div class="sc-form">К₁ ⊕ И₁ ⊕ И₂ ⊕ И₄<br>${r[0]} ⊕ ${r[2]} ⊕ ${r[4]} ⊕ ${r[6]}</div>
+        <div class="sc-val">= ${s1}</div>
+      </div>
+      <div class="s-card">
+        <div class="sc-label">S₂</div>
+        <div class="sc-covers">позиции 2, 3, 6, 7</div>
+        <div class="sc-form">К₂ ⊕ И₁ ⊕ И₃ ⊕ И₄<br>${r[1]} ⊕ ${r[2]} ⊕ ${r[5]} ⊕ ${r[6]}</div>
+        <div class="sc-val">= ${s2}</div>
+      </div>
+      <div class="s-card">
+        <div class="sc-label">S₃</div>
+        <div class="sc-covers">позиции 4, 5, 6, 7</div>
+        <div class="sc-form">К₃ ⊕ И₂ ⊕ И₃ ⊕ И₄<br>${r[3]} ⊕ ${r[4]} ⊕ ${r[5]} ⊕ ${r[6]}</div>
+        <div class="sc-val">= ${s3}</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="sect-label">Определение позиции ошибки</div>
+    <div class="calc-formula" style="margin-bottom:14px;">
+      Позиция = S₃·4 + S₂·2 + S₁
+      &nbsp;=&nbsp; <span class="cv">${s3}</span>·4 + <span class="cv">${s2}</span>·2 + <span class="cv">${s1}</span>
+      &nbsp;=&nbsp; <span class="cr">${errPos}</span>
+    </div>
+  `;
+
+  if (errPos === 0) {
+    html += `<div class="note success">Синдром = 000 &nbsp;→&nbsp; <span class="badge green">Ошибок нет</span><br>
+             Сообщение получено без искажений.</div>`;
+  } else {
+    html += `<div class="note danger">
+               Синдром = ${s3}${s2}${s1}₂ = ${errPos}₁₀ &nbsp;→&nbsp;
+               <span class="badge red">Ошибка в позиции ${errPos} (${LABELS[errPos-1]})</span><br>
+               Инвертируем бит: &nbsp;<strong>${r[errPos-1]}</strong> → <strong style="color:var(--green)">${corrected[errPos-1]}</strong>
+             </div>
+             <div style="margin-top:10px;" class="sect-label">Исправленное кодовое слово</div>
+             <div class="dbit-row">${renderBitRow(corrected, fixHi)}</div>`;
+  }
+
+  // Сохраняем для шага 5
+  window._dec = { s1, s2, s3, errPos, corrected, recovered };
+
+  document.getElementById('decContent').innerHTML = html;
+  setProgress(4);
+  showBlock(4);
+}
+
+/* ================================================================
+   STEP 5 — Result
+   ================================================================ */
+function goStep5() {
+  const { errPos, corrected, recovered } = window._dec;
+  const match = dataBits.every((b, i) => b === recovered[i]);
+
+  const rxHi  = {};
+  const fixHi = {};
+  if (injectedPos !== -1)          rxHi[injectedPos - 1]  = 'err';
+  if (errPos > 0 && errPos <= 7)   fixHi[errPos - 1]      = 'fix';
+
+  // Цветная битовая строка для таблицы (простая)
+  const bitStr = (arr, colors) => arr.map((b, i) =>
+    `<span style="color:${colors[i] || 'var(--fg)'}">${b}</span>`
+  ).join('&thinsp;');
+
+  const origColors  = Array(4).fill('var(--blue)');
+  const cwColors    = IS_K.map(k => k ? 'var(--blue)' : 'var(--fg)');
+  const rxColors    = IS_K.map((k, i) => (i+1) === injectedPos ? 'var(--red)' : (k ? 'var(--blue)' : 'var(--fg)'));
+  const corColors   = IS_K.map((k, i) => (i+1) === errPos ? 'var(--green)' : (k ? 'var(--blue)' : 'var(--fg)'));
+  const recColors   = Array(4).fill('var(--aqua)');
+
+  let html = `
+    <table class="res-table">
+      <tr>
+        <td class="rk">Исходное сообщение</td>
+        <td class="rv">${bitStr(dataBits, origColors)}</td>
+      </tr>
+      <tr>
+        <td class="rk">Кодовое слово</td>
+        <td class="rv">${bitStr(codeword, cwColors)}</td>
+      </tr>
+      <tr>
+        <td class="rk">Получено</td>
+        <td class="rv">${bitStr(received, rxColors)}</td>
+      </tr>
+      ${errPos > 0 ? `<tr>
+        <td class="rk">После исправления</td>
+        <td class="rv">${bitStr(corrected, corColors)}</td>
+      </tr>` : ''}
+      <tr>
+        <td class="rk">Извлечённые биты</td>
+        <td class="rv">${bitStr(recovered, recColors)}</td>
+      </tr>
+    </table>
+  `;
+
+  if (injectedPos === -1) {
+    html += `<div class="verdict ok">✓ Передача без ошибок — сообщение принято корректно</div>`;
+  } else if (match) {
+    html += `<div class="verdict corrected">✓ Ошибка в позиции ${injectedPos} обнаружена и исправлена — сообщение восстановлено</div>`;
+  } else {
+    html += `<div class="verdict fail">✗ Восстановление не удалось</div>`;
+  }
+
+  html += `<div class="note" style="margin-top:14px;font-size:0.75rem;color:var(--fg4);">
+    <strong style="color:var(--fg2)">Возможности кода Хэмминга (7,4):</strong>
+    исправляет любую однобитовую ошибку (кодовое расстояние d=3).
+    Двухбитовые ошибки обнаруживаются, но не исправляются (используйте расширенный код Хэмминга SECDED).
+  </div>`;
+
+  document.getElementById('resContent').innerHTML = html;
+  setProgress(5);
+  showBlock(5);
+}
+
+/* ================================================================
+   NAVIGATION — back
+   ================================================================ */
+function goBack(fromBlock) {
+  hideBlock(fromBlock);
+  setProgress(fromBlock - 1);
+  const target = document.getElementById('block' + (fromBlock - 1));
+  setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 40);
+}
+
+/* ================================================================
+   RESTART
+   ================================================================ */
+function restart() {
+  dataBits = []; codeword = []; received = []; injectedPos = -1;
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById('b' + i);
+    el.value = ''; el.classList.remove('filled');
+  });
+  [2,3,4,5].forEach(hideBlock);
+  setProgress(1);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => document.getElementById('b0').focus(), 400);
+}
+</script>
+</body>
+</html>
